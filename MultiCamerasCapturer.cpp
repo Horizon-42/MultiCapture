@@ -16,15 +16,28 @@ bool CaptureRtsp(string rtsp, string save_dir, int wait_time) {
         return false;
     }
 
+    // 判断文件夹是否存在
+    filesystem::path save(save_dir);
+    if (!filesystem::exists(save)) {
+        filesystem::create_directories(save);
+    }
+
     Mat frame;
-    time_t time_stamp;
+    timespec tn;
+    int cnt = 1;
     while (vc.read(frame)) {
-        time_stamp = time(NULL);
-        string file_name = to_string(time_stamp) + ".png";
-        imwrite(save_dir + file_name, frame);
+        clock_gettime(CLOCK_REALTIME, &tn);
         imshow(save_dir, frame);
-        char c = (char) waitKey(wait_time);
-        if (c == 27 || c == 'q' || c == 'Q')
+        cnt += 1;
+        if (cnt % wait_time == 0) {
+            string file_name = to_string(tn.tv_sec * 1000000000 + tn.tv_nsec) + ".png";
+            imwrite(save_dir + file_name, frame);
+            cnt = 1;
+        }
+        char c = (char) waitKey(1);
+        if (c == 27 || c == 'q' || c == 'Q') {
+            waitKey(10);
             break;
+        }
     }
 }
